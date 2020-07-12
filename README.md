@@ -1,1 +1,1 @@
-# 1CademyWikipediaBot
+# 1CademyBots
