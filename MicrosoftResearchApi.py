@@ -1,6 +1,6 @@
 import json
 import requests
-import secrets
+import MicrosoftAcademicAPIKey
 # import http.client
 # import urllib.request
 # import urllib.parse
@@ -9,7 +9,7 @@ import secrets
 
 
 
-client_key = secrets.API_KEY
+client_key = MicrosoftAcademicAPIKey.API_KEY
 
 headers = {
     # Request headers
