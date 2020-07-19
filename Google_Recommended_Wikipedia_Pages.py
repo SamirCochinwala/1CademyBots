@@ -1,4 +1,3 @@
-# Import the required libraries.
 import sys
 import os
 
@@ -7,18 +6,17 @@ import re
 import time
 import random
 import json
+import csv
 
-# Import requests library.
 import requests
-# Import BeautifulSoup library
 from bs4 import SoupStrainer, BeautifulSoup
 
 # import unicodedata
 
-import CustomSearchAPIKey
+from CustomSearchAPIKey import CustomSearchAPIKey, SearchEngineID
 
-# Import Website Scraping Library.
-from WikipediaScrapingLibrary import soupStructure, WikipediaPageStats
+from WebsiteScapingLibrary import soupStructure
+from WikipediaScrapingLibrary import WikipediaPageStats
 
 
 def num(stringObj):
@@ -47,8 +45,8 @@ def is_ascii(s):
 # Extract search results from google.
 def GoogleSearchAPIResults(searchTerm, numberOfPages):
 
-    searchURL = "https://www.googleapis.com/customsearch/v1?key=" + \
-        CustomSearchAPIKey + "&q=" + searchTerm
+    searchURL = "https://www.googleapis.com/customsearch/v1/siterestrict?cx=" + \
+        SearchEngineID + "&key=" + CustomSearchAPIKey + "&q=" + searchTerm
 
     # Request a search query from Google and return the respone.
     try:
@@ -62,10 +60,10 @@ def GoogleSearchAPIResults(searchTerm, numberOfPages):
 
     while not 'items' in response:
         print("Search URL: " + searchURL)
-        print("Cannot find items in the search results. Please enter a new search URL:")
+        print("Cannot find items in the search results. Enter a new search query:")
         searchURL = input()
-        searchURL = "https://www.googleapis.com/customsearch/v1?key=" + \
-            CustomSearchAPIKey + "&q=" + searchURL
+        searchURL = "https://www.googleapis.com/customsearch/v1/siterestrict?cx=" + \
+            SearchEngineID + "&key=" + CustomSearchAPIKey + "&q=" + searchTerm
         if searchURL == "1":
             return []
         try:
@@ -77,21 +75,18 @@ def GoogleSearchAPIResults(searchTerm, numberOfPages):
             print("That was a wrong URL.")
 
     results = []
-
     for responseItem in response['items']:
-        # Append the found data of the result to the array of results.
         results.append(
             {'title': responseItem['title'], 'hyperlink': responseItem['link']})
 
     # return the results.
     return results
 
-# Identify if the WIkipage is an appropriate one.
-
 
 def IsWikipageAppropriate(title, hyperlink):
 
-    if "Category:" in title or "User:" in title or "Talk:" in title or "User talk:" in title or "Book:" in title:
+    if ("Category:" in title or "User:" in title or "Talk:" in title or "User talk:" in title or
+            "Book:" in title):
         return False, None
 
     wikipediaSoup = soupStructure(hyperlink)
@@ -108,11 +103,11 @@ def IsWikipageAppropriate(title, hyperlink):
         wikipediaSoup = soupStructure(hyperlink)
 
     if wikipediaSoup != "":
-        pubResultRow = WikipediaPageStats(
+        resultRow = WikipediaPageStats(
             hyperlink, wikipediaSoup, title, 'list')
 
         trialNum = 0
-        while pubResultRow == [] and trialNum < 10:
+        while resultRow == [] and trialNum < 10:
             trialNum += 1
             print("wikipageURL:", hyperlink,
                   "is not found. Please enter a new one:")
@@ -131,123 +126,97 @@ def IsWikipageAppropriate(title, hyperlink):
                 #     return False, None
                 wikipediaSoup = soupStructure(hyperlink)
 
-            pubResultRow = WikipediaPageStats(
+            resultRow = WikipediaPageStats(
                 hyperlink, wikipediaSoup, title, 'list')
 
-        if pubResultRow == []:
+        if resultRow == []:
             return False, None
-        print("Wikipedia page Stats:", pubResultRow)
+        print("Wikipedia page Stats:", resultRow)
 
         # If the edit protection os the page is not None:
-        if pubResultRow[2].lower() != "none":
+        if resultRow[2].lower() != "none":
             print("The Wikipedia page is edit protected. Do not recommend it.")
             return False, None
-        if pubResultRow[3].lower() == "stub-class":
+        if resultRow[3].lower() == "stub-class":
             print("The Wikipedia page is a Stub. Do not recommend it.")
             return False, None
-        # if pubResultRow[3].lower() == "b-class":
+        # if resultRow[3].lower() == "b-class":
         #   print "The Wikipedia page is a B-Class. Do not recommend it."
         #   return False, None
-        # if pubResultRow[3].lower() == "b+ class":
+        # if resultRow[3].lower() == "b+ class":
         #   print "The Wikipedia page is a B+ class. Do not recommend it."
         #   return False, None
-        # if pubResultRow[3].lower() == "ga-class":
+        # if resultRow[3].lower() == "ga-class":
         #   print "The Wikipedia page is a GA-Class. Do not recommend it."
         #   return False, None
-        # if pubResultRow[3].lower() == "a-class":
+        # if resultRow[3].lower() == "a-class":
         #   print "The Wikipedia page is a A-Class. Do not recommend it."
         #   return False, None
-        # if pubResultRow[3].lower() == "fa-class":
+        # if resultRow[3].lower() == "fa-class":
         #   print "The Wikipedia page is a FA-Class. Do not recommend it."
         #   return False, None
-        if num(pubResultRow[14]) < 1000:
+        if num(resultRow[14]) < 1000:
             print(
                 "The Wikipedia page has been viewed less than 1000 times. Do not recommend it.")
             return False, None
 
         print("The Wikipedia page is OK to recommend.")
-        return True, pubResultRow
+        return True, resultRow
 
 
-viewedRecommendations = {}
+datatsetFileName = input(
+    "Enter the name of the dataset csv file without any sufix:")
+while len(datatsetFileName) <= 1:
+    datatsetFileName = input(
+        "Enter the name of the dataset csv file without any sufix:")
 
-print("Enter the name of the authors and publications dataset csv file without any sufix:")
-datatsetFileName = input()
+searchQuery = input("Enter the search query string:")
+while len(searchQuery) <= 1:
+    searchQuery = input("Enter the search query string:")
 
-if datatsetFileName == "":
-    datatsetFileName = 'Ideas_Repec_Dataset_Pilot3_Clean'
+GoogleSearchResults = GoogleSearchAPIResults(searchQuery, 1)
+# print(GoogleSearchResults)
 
-with open(datatsetFileName + '.csv', 'rb') as fr:
-    reader = csv.reader(fr)
+with open(datatsetFileName + '.csv', 'w') as fw:
+    writer = csv.writer(fw)
 
-    with open(datatsetFileName + '_Recommendations.csv', 'wb') as fw:
-        writer = csv.writer(fw)
+    resultRow = ['Wikipage1', 'WikipageURL1', 'Wikipage2', 'WikipageURL2',
+                 'Wikipage3', 'WikipageURL3', 'Wikipage4', 'WikipageURL4',
+                 'Wikipage5', 'WikipageURL5', 'Wikipage6', 'WikipageURL6',
+                 'Wikipage7', 'WikipageURL7', 'Wikipage8', 'WikipageURL8',
+                 'Wikipage9', 'WikipageURL9', 'Wikipage10', 'WikipageURL10']
+    writer.writerow(resultRow)
 
-        pubResultRow = ['email', 'publication1', 'Wikipage1', 'WikipageURL1', 'publication2', 'Wikipage2', 'WikipageURL2', 'publication3', 'Wikipage3', 'WikipageURL3', 'publication4',
-                        'Wikipage4', 'WikipageURL4', 'publication5', 'Wikipage5', 'WikipageURL5', 'publication6', 'Wikipage6', 'WikipageURL6', 'publication7', 'Wikipage7', 'WikipageURL7']
-        writer.writerow(pubResultRow)
+    with open(datatsetFileName + '_Stats.csv', 'w') as fw:
+        writer_Stats = csv.writer(fw)
 
-        with open(datatsetFileName + '_Recommendations_Stats.csv', 'wb') as fw:
-            writer_Stats = csv.writer(fw)
+        wikipageResultRow = ['ID', 'Title', 'Edit Protection Level', 'Class', 'Importance',
+                             'Page Length', '# watchers', 'Time of Last Edit',
+                             '# redirects to this page', 'Page Creation Date', 'Total # edits',
+                             'Total # distinct authors', 'Recent # edits (over the past month)',
+                             'Recent # distinct authors', '# views (last 90 days)',
+                             'Total # references', '# references published after 2010',
+                             '# External Hyperlinks']
+        writer_Stats.writerow(wikipageResultRow)
 
-            wikipageResultRow = ['ID', 'Title', 'Edit Protection Level', 'Class', 'Importance', 'Page Length', '# watchers', 'Time of Last Edit', '# redirects to this page', 'Page Creation Date', 'Total # edits',
-                                 'Total # distinct authors', 'Recent # edits (over the past month)', 'Recent # distinct authors', '# views (last 90 days)', 'Total # references', '# references published after 2010', '# External Hyperlinks']
-            writer_Stats.writerow(wikipageResultRow)
+        for searchRIndex in range(len(GoogleSearchResults)):
+            recommendedTitle = GoogleSearchResults[searchRIndex]['title']
+            recommendedURL = GoogleSearchResults[searchRIndex]['hyperlink']
 
-            previousURLs = []
+            flag, wikipageResultRow = IsWikipageAppropriate(
+                recommendedTitle, recommendedURL)
+            while flag == False and searchRIndex < len(GoogleSearchResults) - 1:
+                print("The recommendation is not appropriate.")
+                searchRIndex += 1
+                recommendedTitle = GoogleSearchResults[searchRIndex]['title']
+                recommendedURL = GoogleSearchResults[searchRIndex]['hyperlink']
+                flag, wikipageResultRow = IsWikipageAppropriate(
+                    recommendedTitle, recommendedURL)
 
-            header = next(reader)
-            for row in reader:
-                pubResultRow = []
+            if flag:
+                writer_Stats.writerow(wikipageResultRow)
 
-                email = row[2]
-                print(email)
-                pubResultRow.append(email)
+            resultRow.extend(
+                [recommendedTitle, recommendedURL])
 
-                for i in range(8, len(row) - 3, 4):
-                    if row[i] != "":
-                        publication = row[i]
-                        keyword = row[i + 3]
-                        keyword = keyword.replace(" ", "+")
-                        print("Paper:", publication)
-                        print("Keyword:", keyword)
-                        recommendations = []
-                        publicationNotAppropriate = False
-                        if keyword in viewedRecommendations:
-                            recommendations = viewedRecommendations[keyword]
-                        else:
-                            while len(recommendations) == 0 and publicationNotAppropriate == False:
-                                recommendations = GoogleSearchAPIResults(
-                                    "econ+" + keyword, 1)
-                                print(recommendations)
-                                if len(recommendations) == 0:
-                                    print(
-                                        "The publication is not appropriate. I'm going to skip it.")
-                                    publicationNotAppropriate = True
-                            viewedRecommendations[keyword] = recommendations
-
-                        if not publicationNotAppropriate:
-                            recommendationIndex = 0
-                            recommendedTitle = recommendations[recommendationIndex]['title']
-                            recommendedURL = recommendations[recommendationIndex]['hyperlink']
-
-                            if not recommendedURL in previousURLs:
-
-                                flag, wikipageResultRow = IsWikipageAppropriate(
-                                    recommendedTitle, recommendedURL)
-                                while flag == False and recommendationIndex < len(recommendations) - 1:
-                                    print(
-                                        "The recommendation is not appropriate.")
-                                    recommendationIndex += 1
-                                    recommendedTitle = recommendations[recommendationIndex]['title']
-                                    recommendedURL = recommendations[recommendationIndex]['hyperlink']
-                                    flag, wikipageResultRow = IsWikipageAppropriate(
-                                        recommendedTitle, recommendedURL)
-
-                                if flag:
-                                    previousURLs.append(recommendedURL)
-                                    writer_Stats.writerow(wikipageResultRow)
-
-                            pubResultRow.extend(
-                                [publication, recommendedTitle, recommendedURL])
-                writer.writerow(pubResultRow)
+        writer.writerow(resultRow)

@@ -1,22 +1,16 @@
-# Import Regular Expressions' libraries
 import re
 # import unicodedata
 
-# Import time libraries
 import time
 
-# Import BeautifulSoup library
 from bs4 import SoupStrainer, BeautifulSoup
 
-# Import the library needed to extract plain text from html.
-from HTMLParser import HTMLParser
+from html.parser import HTMLParser
 
-# Import requests library.
 import requests
 
-# Import urllib to manipulate URLs
 import urllib
-import urllib2
+# import urllib2
 
 
 # Check if the string is in ASCII or not.

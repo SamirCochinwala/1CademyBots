@@ -1,2 +1,5 @@
 CustomSearchAPIKey.py
 nodes.csv
+COVID_articles.csv
+COVID_articles_Stats.csv
+__pycache__/
