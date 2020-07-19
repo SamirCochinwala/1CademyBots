@@ -1,4 +1,7 @@
 CustomSearchAPIKey.py
 nodes.csv
-secrets.py
-__pycache__
+MicrosoftAcademicAPIKey.py
+COVID_articles.csv
+COVID_articles_Stats.csv
+__pycache__/
+
