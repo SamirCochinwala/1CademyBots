@@ -483,7 +483,7 @@ def WikipediaPageStats(articleHyperlink, articleSoup, articleTitle, desiredCateg
                     referencesNumber = 0
                     for reference in referenceList:
                         yearDigits = re.search(
-                            '.*(\d\d\d\d).*', reference.renderContents())
+                            '.*(\d\d\d\d).*', str(reference.renderContents()))
                         if yearDigits != None and int(yearDigits.group(1)) >= afterYear:
                             referencesNumber += 1
                     statsContext['referencesNumAfter2010'] = referencesNumber
@@ -496,7 +496,7 @@ def WikipediaPageStats(articleHyperlink, articleSoup, articleTitle, desiredCateg
                 if 'extlinks' in pageData:
                     numberOfExternalLinks += len(pageData['extlinks'])
             responseCounter = 1
-            print("# External Hyperlinks: " + numberOfExternalLinks, '\n')
+            print("# External Hyperlinks: " + str(numberOfExternalLinks), '\n')
 
             statsContext['externalLinks'] = numberOfExternalLinks
             return statsContext

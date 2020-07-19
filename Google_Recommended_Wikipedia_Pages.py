@@ -164,11 +164,12 @@ def IsWikipageAppropriate(title, hyperlink):
         return True, resultRow
 
 
-datatsetFileName = input(
-    "Enter the name of the dataset csv file without any sufix:")
-while len(datatsetFileName) <= 1:
-    datatsetFileName = input(
-        "Enter the name of the dataset csv file without any sufix:")
+# datatsetFileName = input(
+#     "Enter the name of the dataset csv file without any sufix:")
+# while len(datatsetFileName) <= 1:
+#     datatsetFileName = input(
+#         "Enter the name of the dataset csv file without any sufix:")
+datatsetFileName = "COVID_articles"
 
 searchQuery = input("Enter the search query string:")
 while len(searchQuery) <= 1:
