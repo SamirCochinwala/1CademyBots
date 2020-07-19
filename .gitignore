@@ -1,2 +1,4 @@
 CustomSearchAPIKey.py
 nodes.csv
+secrets.py
+__pycache__
