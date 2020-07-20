@@ -175,8 +175,14 @@ searchQuery = input("Enter the search query string:")
 while len(searchQuery) <= 1:
     searchQuery = input("Enter the search query string:")
 
-GoogleSearchResults = GoogleSearchAPIResults(searchQuery, 1)
-# print(GoogleSearchResults)
+#Sometimes google search API will return a blank wikipedia url (http://wikipedia.com)
+#This is to remove those results from the list before retreiving every article
+GoogleSearchResults = []
+for result in GoogleSearchAPIResults(searchQuery, 1):
+    if result['title'] != 'Wikipedia':
+        GoogleSearchResults.append({'title': result['title'], 'hyperlink': result['hyperlink']}) 
+
+#print(GoogleSearchResults)
 
 with open(datatsetFileName + '.csv', 'w') as fw:
     writer = csv.writer(fw)
@@ -204,6 +210,8 @@ with open(datatsetFileName + '.csv', 'w') as fw:
             recommendedTitle = GoogleSearchResults[searchRIndex]['title']
             recommendedURL = GoogleSearchResults[searchRIndex]['hyperlink']
 
+            
+
             flag, wikipageResultRow = IsWikipageAppropriate(
                 recommendedTitle, recommendedURL)
             while flag == False and searchRIndex < len(GoogleSearchResults) - 1:
@@ -211,6 +219,7 @@ with open(datatsetFileName + '.csv', 'w') as fw:
                 searchRIndex += 1
                 recommendedTitle = GoogleSearchResults[searchRIndex]['title']
                 recommendedURL = GoogleSearchResults[searchRIndex]['hyperlink']
+
                 flag, wikipageResultRow = IsWikipageAppropriate(
                     recommendedTitle, recommendedURL)
 
