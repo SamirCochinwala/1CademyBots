@@ -18,6 +18,7 @@ from CustomSearchAPIKey import CustomSearchAPIKey, SearchEngineID
 from WebsiteScapingLibrary import soupStructure
 from WikipediaScrapingLibrary import WikipediaPageStats
 
+from MicrosoftResearchApi import getExpression
 
 def num(stringObj):
     try:
@@ -61,7 +62,7 @@ def GoogleSearchAPIResults(searchTerm, numberOfPages):
     while not 'items' in response:
         print("Search URL: " + searchURL)
         print("Cannot find items in the search results. Enter a new search query:")
-        searchURL = input()
+        searchTerm = input()
         searchURL = "https://www.googleapis.com/customsearch/v1/siterestrict?cx=" + \
             SearchEngineID + "&key=" + CustomSearchAPIKey + "&q=" + searchTerm
         if searchURL == "1":
@@ -207,24 +208,17 @@ with open(datatsetFileName + '.csv', 'w') as fw:
         writer_Stats.writerow(wikipageResultRow)
 
         for searchRIndex in range(len(GoogleSearchResults)):
+
             recommendedTitle = GoogleSearchResults[searchRIndex]['title']
             recommendedURL = GoogleSearchResults[searchRIndex]['hyperlink']
 
-            
-
             flag, wikipageResultRow = IsWikipageAppropriate(
                 recommendedTitle, recommendedURL)
-            while flag == False and searchRIndex < len(GoogleSearchResults) - 1:
-                print("The recommendation is not appropriate.")
-                searchRIndex += 1
-                recommendedTitle = GoogleSearchResults[searchRIndex]['title']
-                recommendedURL = GoogleSearchResults[searchRIndex]['hyperlink']
+            if not flag:
+                continue
 
-                flag, wikipageResultRow = IsWikipageAppropriate(
-                    recommendedTitle, recommendedURL)
-
-            if flag:
-                writer_Stats.writerow(wikipageResultRow)
+            
+            writer_Stats.writerow(wikipageResultRow)
 
             resultRow.extend(
                 [recommendedTitle, recommendedURL])
