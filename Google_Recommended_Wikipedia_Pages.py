@@ -103,7 +103,6 @@ def IsWikipageAppropriate(title, hyperlink):
         wikipediaSoup = soupStructure(hyperlink)
 
     if wikipediaSoup != "":
-        print("Title: ", title)
         resultRow = WikipediaPageStats(
             hyperlink, wikipediaSoup, title, 'list')
 
@@ -177,8 +176,7 @@ while len(searchQuery) <= 1:
     searchQuery = input("Enter the search query string:")
 
 GoogleSearchResults = GoogleSearchAPIResults(searchQuery, 1)
-
-#print(GoogleSearchResults)
+# print(GoogleSearchResults)
 
 with open(datatsetFileName + '.csv', 'w') as fw:
     writer = csv.writer(fw)
@@ -205,13 +203,6 @@ with open(datatsetFileName + '.csv', 'w') as fw:
         for searchRIndex in range(len(GoogleSearchResults)):
             recommendedTitle = GoogleSearchResults[searchRIndex]['title']
             recommendedURL = GoogleSearchResults[searchRIndex]['hyperlink']
-
-            #For some reason google is returning just the wikipedia url
-            #http://wikipedia.com
-            #It is not even an article so it is skipped
-            if recommendedTitle == 'Wikipedia':
-                continue
-
 
             flag, wikipageResultRow = IsWikipageAppropriate(
                 recommendedTitle, recommendedURL)
