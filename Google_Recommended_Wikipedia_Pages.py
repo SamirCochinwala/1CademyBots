@@ -134,10 +134,10 @@ def IsWikipageAppropriate(title, hyperlink):
         print("Wikipedia page Stats:", resultRow)
 
         # If the edit protection os the page is not None:
-        if resultRow[2].lower() != "none":
+        if resultRow["editProtectionLevel"].lower() != "none":
             print("The Wikipedia page is edit protected. Do not recommend it.")
             return False, None
-        if resultRow[3].lower() == "stub-class":
+        if resultRow["qualityClass"].lower() == "stub-class":
             print("The Wikipedia page is a Stub. Do not recommend it.")
             return False, None
         # if resultRow[3].lower() == "b-class":
@@ -155,7 +155,7 @@ def IsWikipageAppropriate(title, hyperlink):
         # if resultRow[3].lower() == "fa-class":
         #   print "The Wikipedia page is a FA-Class. Do not recommend it."
         #   return False, None
-        if num(resultRow[14]) < 1000:
+        if num(resultRow["viewsNum"]) < 1000:
             print(
                 "The Wikipedia page has been viewed less than 1000 times. Do not recommend it.")
             return False, None
