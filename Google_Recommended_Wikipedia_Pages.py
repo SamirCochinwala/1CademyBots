@@ -9,7 +9,7 @@ import json
 import csv
 
 import requests
-from bs4 import SoupStrainer, BeautifulSoup
+from bs4 import SoupStrainer, BeautifulSoup, element
 
 # import unicodedata
 
@@ -165,6 +165,39 @@ def IsWikipageAppropriate(title, hyperlink):
         return True, resultRow
 
 
+def GetSummaryFromContainer(SummaryContainer):
+    found = []
+    for child in SummaryContainer.children:
+        if isinstance(child, element.Tag):
+
+            #Each article summary ends with this table so we don't want
+            #any <p> tags after this
+            if child.has_attr('id') and child['id'] == "toc":
+                return found
+
+            #Each article container has a blank <p> tag that we want to ignore
+            if child.has_attr('class') and "mw-empty-elt" in child['class']:
+                continue
+
+            #Our summary paragraph(s)
+            if child.name == 'p':
+                found.append(child)
+
+
+    #We should have returned our list already, so if we get this far
+    #something is probably wrong with the structure of our soup article
+    return []
+
+def GetReferenceDataFromArticle(url):
+    print("Getting summary from article: ", url)#TODO remove
+    soup = soupStructure(url)
+
+    #The wiki html structure does not explicitly define the summary paragraphs so we
+    #have to find the <p> tags which are direct descendents of the <div> below id#mw-content-text
+    summary_container = soup.find(id="mw-content-text")
+    summary_tags = GetSummaryFromContainer(list(summary_container.children)[0])
+
+
 # datatsetFileName = input(
 #     "Enter the name of the dataset csv file without any sufix:")
 # while len(datatsetFileName) <= 1:
@@ -214,9 +247,17 @@ with open(datatsetFileName + '.csv', 'w') as fw:
 
             flag, wikipageResultRow = IsWikipageAppropriate(
                 recommendedTitle, recommendedURL)
+            
+            #flag is false if the article should not be used
             if not flag:
                 continue
 
+            #Get summary paragraph from recommended articles
+            #summary = soupStructure(recommendedURL)
+            #with open(os.getcwd() + '/soup.html', 'w', encoding='utf-8') as fw:
+                #fw.write(str(summary))
+            ReferenceData = GetReferenceDataFromArticle(recommendedURL)
+            break
             #adds the current wikistats to the next row in the csv, changing bytes to string when necessary
             writer_Stats.writerow(list(str(item) if not str(item).startswith("b'") else item.decode() for item in wikipageResultRow.values()))
 
@@ -224,3 +265,6 @@ with open(datatsetFileName + '.csv', 'w') as fw:
                 [recommendedTitle, recommendedURL])
 
         writer.writerow(resultRow)
+
+if __name__ == '__main__':#TODO remove 
+    pass
