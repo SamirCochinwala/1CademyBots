@@ -194,7 +194,7 @@ with open(datatsetFileName + '.csv', 'w') as fw:
                  'Wikipage7', 'WikipageURL7', 'Wikipage8', 'WikipageURL8',
                  'Wikipage9', 'WikipageURL9', 'Wikipage10', 'WikipageURL10']
     writer.writerow(resultRow)
-
+    resultRow = []
     with open(datatsetFileName + '_Stats.csv', 'w') as fw:
         writer_Stats = csv.writer(fw)
 
@@ -217,8 +217,8 @@ with open(datatsetFileName + '.csv', 'w') as fw:
             if not flag:
                 continue
 
-            
-            writer_Stats.writerow(wikipageResultRow)
+            #adds the current wikistats to the next row in the csv, changing bytes to string when necessary
+            writer_Stats.writerow(list(str(item) if not str(item).startswith("b'") else item.decode() for item in wikipageResultRow.values()))
 
             resultRow.extend(
                 [recommendedTitle, recommendedURL])
