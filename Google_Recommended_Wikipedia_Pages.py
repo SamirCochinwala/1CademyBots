@@ -164,8 +164,11 @@ def IsWikipageAppropriate(title, hyperlink):
         print("The Wikipedia page is OK to recommend.")
         return True, resultRow
 
-
-def GetSummaryFromContainer(SummaryContainer):
+#Returns a list of html reference tag ids
+#
+#accepts: bs4 Tag as SummaryContainer
+#
+def GetReferencesFromSummaryContainer(SummaryContainer):
     found = []
     for child in SummaryContainer.children:
         if isinstance(child, element.Tag):
@@ -181,13 +184,21 @@ def GetSummaryFromContainer(SummaryContainer):
 
             #Our summary paragraph(s)
             if child.name == 'p':
-                found.append(child)
+                references = child.find_all('sup')
+                for ref in references: 
+                    found.extend([tag['href'][1:] for tag in ref.find_all('a')])
 
 
     #We should have returned our list already, so if we get this far
     #something is probably wrong with the structure of our soup article
     return []
 
+
+#Returns a list of references listed in the summary of a
+#wikipedia article
+#
+#accepts a url as string
+#
 def GetReferenceDataFromArticle(url):
     print("Getting summary from article: ", url)#TODO remove
     soup = soupStructure(url)
@@ -195,8 +206,26 @@ def GetReferenceDataFromArticle(url):
     #The wiki html structure does not explicitly define the summary paragraphs so we
     #have to find the <p> tags which are direct descendents of the <div> below id#mw-content-text
     summary_container = soup.find(id="mw-content-text")
-    summary_tags = GetSummaryFromContainer(list(summary_container.children)[0])
+    refs = GetReferencesFromSummaryContainer(list(summary_container.children)[0])
+    
+    ExtractedReferences = []
+    
+    for ref_id in refs:
+        if ref_id == "wiki/Wikipedia:Citation_needed":
+            print("Missing citation ")
 
+        FullReference = {}
+        ref = soup.find(id=ref_id)
+        if not ref:
+            print("Error finding reference with HTML ID: ", ref_id)
+            continue
+        LinkTags = ref.find_all('a')
+
+        for tag in LinkTags:
+            if tag.has_attr('class'):
+                ExtractedReferences.append({'name': tag.string, 'link': tag['href']})
+        
+    return ExtractedReferences
 
 # datatsetFileName = input(
 #     "Enter the name of the dataset csv file without any sufix:")
@@ -252,12 +281,10 @@ with open(datatsetFileName + '.csv', 'w') as fw:
             if not flag:
                 continue
 
-            #Get summary paragraph from recommended articles
-            #summary = soupStructure(recommendedURL)
-            #with open(os.getcwd() + '/soup.html', 'w', encoding='utf-8') as fw:
-                #fw.write(str(summary))
             ReferenceData = GetReferenceDataFromArticle(recommendedURL)
-            break
+
+            #TODO Pass reference data to MicrosoftResearchAPI
+
             #adds the current wikistats to the next row in the csv, changing bytes to string when necessary
             writer_Stats.writerow(list(str(item) if not str(item).startswith("b'") else item.decode() for item in wikipageResultRow.values()))
 
