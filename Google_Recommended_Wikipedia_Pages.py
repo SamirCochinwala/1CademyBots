@@ -9,7 +9,7 @@ import json
 import csv
 
 import requests
-from bs4 import SoupStrainer, BeautifulSoup
+from bs4 import SoupStrainer, BeautifulSoup, element
 
 # import unicodedata
 
@@ -18,6 +18,7 @@ from CustomSearchAPIKey import CustomSearchAPIKey, SearchEngineID
 from WebsiteScapingLibrary import soupStructure
 from WikipediaScrapingLibrary import WikipediaPageStats
 
+from MicrosoftResearchApi import getExpression
 
 def num(stringObj):
     try:
@@ -61,7 +62,7 @@ def GoogleSearchAPIResults(searchTerm, numberOfPages):
     while not 'items' in response:
         print("Search URL: " + searchURL)
         print("Cannot find items in the search results. Enter a new search query:")
-        searchURL = input()
+        searchTerm = input()
         searchURL = "https://www.googleapis.com/customsearch/v1/siterestrict?cx=" + \
             SearchEngineID + "&key=" + CustomSearchAPIKey + "&q=" + searchTerm
         if searchURL == "1":
@@ -134,10 +135,10 @@ def IsWikipageAppropriate(title, hyperlink):
         print("Wikipedia page Stats:", resultRow)
 
         # If the edit protection os the page is not None:
-        if resultRow[2].lower() != "none":
+        if resultRow["editProtectionLevel"].lower() != "none":
             print("The Wikipedia page is edit protected. Do not recommend it.")
             return False, None
-        if resultRow[3].lower() == "stub-class":
+        if resultRow["qualityClass"].lower() == "stub-class":
             print("The Wikipedia page is a Stub. Do not recommend it.")
             return False, None
         # if resultRow[3].lower() == "b-class":
@@ -155,7 +156,7 @@ def IsWikipageAppropriate(title, hyperlink):
         # if resultRow[3].lower() == "fa-class":
         #   print "The Wikipedia page is a FA-Class. Do not recommend it."
         #   return False, None
-        if num(resultRow[14]) < 1000:
+        if num(resultRow["viewsNum"]) < 1000:
             print(
                 "The Wikipedia page has been viewed less than 1000 times. Do not recommend it.")
             return False, None
@@ -163,6 +164,68 @@ def IsWikipageAppropriate(title, hyperlink):
         print("The Wikipedia page is OK to recommend.")
         return True, resultRow
 
+#Returns a list of html reference tag ids
+#
+#accepts: bs4 Tag as SummaryContainer
+#
+def GetReferencesFromSummaryContainer(SummaryContainer):
+    found = []
+    for child in SummaryContainer.children:
+        if isinstance(child, element.Tag):
+
+            #Each article summary ends with this table so we don't want
+            #any <p> tags after this
+            if child.has_attr('id') and child['id'] == "toc":
+                return found
+
+            #Each article container has a blank <p> tag that we want to ignore
+            if child.has_attr('class') and "mw-empty-elt" in child['class']:
+                continue
+
+            #Our summary paragraph(s)
+            if child.name == 'p':
+                references = child.find_all('sup')
+                for ref in references: 
+                    found.extend([tag['href'][1:] for tag in ref.find_all('a')])
+
+
+    #We should have returned our list already, so if we get this far
+    #something is probably wrong with the structure of our soup article
+    return []
+
+
+#Returns a list of references listed in the summary of a
+#wikipedia article
+#
+#accepts a url as string
+#
+def GetReferenceDataFromArticle(url):
+    print("Getting summary from article: ", url)#TODO remove
+    soup = soupStructure(url)
+
+    #The wiki html structure does not explicitly define the summary paragraphs so we
+    #have to find the <p> tags which are direct descendents of the <div> below id#mw-content-text
+    summary_container = soup.find(id="mw-content-text")
+    refs = GetReferencesFromSummaryContainer(list(summary_container.children)[0])
+    
+    ExtractedReferences = []
+    
+    for ref_id in refs:
+        if ref_id == "wiki/Wikipedia:Citation_needed":
+            print("Missing citation ")
+
+        FullReference = {}
+        ref = soup.find(id=ref_id)
+        if not ref:
+            print("Error finding reference with HTML ID: ", ref_id)
+            continue
+        LinkTags = ref.find_all('a')
+
+        for tag in LinkTags:
+            if tag.has_attr('class'):
+                ExtractedReferences.append({'name': tag.string, 'link': tag['href']})
+        
+    return ExtractedReferences
 
 # datatsetFileName = input(
 #     "Enter the name of the dataset csv file without any sufix:")
@@ -175,8 +238,14 @@ searchQuery = input("Enter the search query string:")
 while len(searchQuery) <= 1:
     searchQuery = input("Enter the search query string:")
 
-GoogleSearchResults = GoogleSearchAPIResults(searchQuery, 1)
-# print(GoogleSearchResults)
+#Sometimes google search API will return a blank wikipedia url (http://wikipedia.com)
+#This is to remove those results from the list before retreiving every article
+GoogleSearchResults = []
+for result in GoogleSearchAPIResults(searchQuery, 1):
+    if result['title'] != 'Wikipedia':
+        GoogleSearchResults.append({'title': result['title'], 'hyperlink': result['hyperlink']}) 
+
+#print(GoogleSearchResults)
 
 with open(datatsetFileName + '.csv', 'w') as fw:
     writer = csv.writer(fw)
@@ -187,7 +256,7 @@ with open(datatsetFileName + '.csv', 'w') as fw:
                  'Wikipage7', 'WikipageURL7', 'Wikipage8', 'WikipageURL8',
                  'Wikipage9', 'WikipageURL9', 'Wikipage10', 'WikipageURL10']
     writer.writerow(resultRow)
-
+    resultRow = []
     with open(datatsetFileName + '_Stats.csv', 'w') as fw:
         writer_Stats = csv.writer(fw)
 
@@ -201,23 +270,28 @@ with open(datatsetFileName + '.csv', 'w') as fw:
         writer_Stats.writerow(wikipageResultRow)
 
         for searchRIndex in range(len(GoogleSearchResults)):
+
             recommendedTitle = GoogleSearchResults[searchRIndex]['title']
             recommendedURL = GoogleSearchResults[searchRIndex]['hyperlink']
 
             flag, wikipageResultRow = IsWikipageAppropriate(
                 recommendedTitle, recommendedURL)
-            while flag == False and searchRIndex < len(GoogleSearchResults) - 1:
-                print("The recommendation is not appropriate.")
-                searchRIndex += 1
-                recommendedTitle = GoogleSearchResults[searchRIndex]['title']
-                recommendedURL = GoogleSearchResults[searchRIndex]['hyperlink']
-                flag, wikipageResultRow = IsWikipageAppropriate(
-                    recommendedTitle, recommendedURL)
+            
+            #flag is false if the article should not be used
+            if not flag:
+                continue
 
-            if flag:
-                writer_Stats.writerow(wikipageResultRow)
+            ReferenceData = GetReferenceDataFromArticle(recommendedURL)
+
+            #TODO Pass reference data to MicrosoftResearchAPI
+
+            #adds the current wikistats to the next row in the csv, changing bytes to string when necessary
+            writer_Stats.writerow(list(str(item) if not str(item).startswith("b'") else item.decode() for item in wikipageResultRow.values()))
 
             resultRow.extend(
                 [recommendedTitle, recommendedURL])
 
         writer.writerow(resultRow)
+
+if __name__ == '__main__':#TODO remove 
+    pass

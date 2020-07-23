@@ -73,14 +73,13 @@ def getEntity(expression, count='1', attributes='Ti'):
     except Exception as e:
         print('The error message is ' + str(e))
 
+if __name__ == '__main__':
+    query = input('What do you want to search?\n')
+    expression = getExpression(query)
+    title, authors, key_word, abstract = getEntity(
+        expression, attributes='Ti,AA.DAuN,IA,CC,F.FN')
 
-query = input('What do you want to search?\n')
-expression = getExpression(query)
-title, authors, key_word, abstract = getEntity(
-    expression, attributes='Ti,AA.DAuN,IA,CC,F.FN')
-
-
-print('Title: ', title)
-print("Authors: ", authors)
-print('Key Words: ', key_word)
-print('Abstract: ', abstract)
+    print('Title: ', title)
+    print("Authors: ", authors)
+    print('Key Words: ', key_word)
+    print('Abstract: ', abstract)
