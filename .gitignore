@@ -1,6 +1,13 @@
 CustomSearchAPIKey.py
 nodes.csv
 MicrosoftAcademicAPIKey.py
-__pycache__
 MicrosoftAcademicPaperCache.json
 MicrosoftAcademicPapers.csv
+COVID_articles.csv
+COVID_articles_Stats.csv
+__pycache__/
+
+/env
+/.vs
+.ini
+
