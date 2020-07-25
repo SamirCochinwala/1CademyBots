@@ -1,4 +1,6 @@
 CustomSearchAPIKey.py
 nodes.csv
-secrets.py
+MicrosoftAcademicAPIKey.py
 __pycache__
+MicrosoftAcademicPaperCache.json
+MicrosoftAcademicPapers.csv
