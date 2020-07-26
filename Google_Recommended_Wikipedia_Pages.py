@@ -194,38 +194,10 @@ def GetReferencesFromSummaryContainer(SummaryContainer):
     return []
 
 
-#Returns a list of references listed in the summary of a
-#wikipedia article
-#
-#accepts a url as string
-#
-def GetReferenceDataFromArticle(url):
-    print("Getting summary from article: ", url)#TODO remove
-    soup = soupStructure(url)
+#Builds a dictionary of systems for 
+def BuildArticleStructure(url):
+    pass
 
-    #The wiki html structure does not explicitly define the summary paragraphs so we
-    #have to find the <p> tags which are direct descendents of the <div> below id#mw-content-text
-    summary_container = soup.find(id="mw-content-text")
-    refs = GetReferencesFromSummaryContainer(list(summary_container.children)[0])
-    
-    ExtractedReferences = []
-    
-    for ref_id in refs:
-        if ref_id == "wiki/Wikipedia:Citation_needed":
-            print("Missing citation ")
-
-        FullReference = {}
-        ref = soup.find(id=ref_id)
-        if not ref:
-            print("Error finding reference with HTML ID: ", ref_id)
-            continue
-        LinkTags = ref.find_all('a')
-
-        for tag in LinkTags:
-            if tag.has_attr('class'):
-                ExtractedReferences.append({'name': tag.string, 'link': tag['href']})
-        
-    return ExtractedReferences
 
 # datatsetFileName = input(
 #     "Enter the name of the dataset csv file without any sufix:")
@@ -281,7 +253,7 @@ with open(datatsetFileName + '.csv', 'w') as fw:
             if not flag:
                 continue
 
-            ReferenceData = GetReferenceDataFromArticle(recommendedURL)
+            
 
             #TODO Pass reference data to MicrosoftResearchAPI
 
