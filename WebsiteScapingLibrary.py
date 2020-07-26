@@ -124,7 +124,7 @@ def soupStructure(url):
                 url = input()
                 if url == "1":
                     return ''
-        except(e):
+        except e:
             if errorCounter < 10:
                 continue
 
