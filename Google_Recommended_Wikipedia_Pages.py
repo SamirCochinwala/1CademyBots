@@ -164,36 +164,6 @@ def IsWikipageAppropriate(title, hyperlink):
         print("The Wikipedia page is OK to recommend.")
         return True, resultRow
 
-#Returns a list of html reference tag ids
-#
-#accepts: bs4 Tag as SummaryContainer
-#
-def GetReferencesFromSummaryContainer(SummaryContainer):
-    found = []
-    for child in SummaryContainer.children:
-        if isinstance(child, element.Tag):
-
-            #Each article summary ends with this table so we don't want
-            #any <p> tags after this
-            if child.has_attr('id') and child['id'] == "toc":
-                return found
-
-            #Each article container has a blank <p> tag that we want to ignore
-            if child.has_attr('class') and "mw-empty-elt" in child['class']:
-                continue
-
-            #Our summary paragraph(s)
-            if child.name == 'p':
-                references = child.find_all('sup')
-                for ref in references: 
-                    found.extend([tag['href'][1:] for tag in ref.find_all('a')])
-
-
-    #We should have returned our list already, so if we get this far
-    #something is probably wrong with the structure of our soup article
-    return []
-
-
 #Builds a dictionary of systems for 
 def BuildArticleStructure(url):
     pass
