@@ -16,7 +16,7 @@ from bs4 import SoupStrainer, BeautifulSoup, element
 from CustomSearchAPIKey import CustomSearchAPIKey, SearchEngineID
 
 from WebsiteScapingLibrary import soupStructure
-from WikipediaScrapingLibrary import WikipediaPageStats
+from WikipediaScrapingLibrary import IsWikipageAppropriate
 
 from MicrosoftResearchApi import getExpression
 
@@ -28,8 +28,6 @@ def num(stringObj):
             return float(stringObj)
         except ValueError:
             return int(stringObj.replace(',', ''))
-
-# Check if the string is in ASCII or not.
 
 
 def is_ascii(s):
@@ -43,15 +41,13 @@ def is_ascii(s):
         return False
 
 
-# Extract search results from google.
 def GoogleSearchAPIResults(searchTerm, numberOfPages):
 
-    searchURL = "https://www.googleapis.com/customsearch/v1/siterestrict?cx=" + \
-        SearchEngineID + "&key=" + CustomSearchAPIKey + "&q=" + searchTerm
+    searchURL = "https://www.googleapis.com/customsearch/v1/siterestrict"
 
-    # Request a search query from Google and return the respone.
     try:
-        response = requests.get(searchURL)
+        response = requests.get(
+            searchURL, {"cx": SearchEngineID, "key": CustomSearchAPIKey, "q": searchTerm})
         response = response.text
 
         response = json.loads(response)
@@ -60,15 +56,21 @@ def GoogleSearchAPIResults(searchTerm, numberOfPages):
         response = {}
 
     while not 'items' in response:
-        print("Search URL: " + searchURL)
+        print("Search URL: " + response.url)
         print("Cannot find items in the search results. Enter a new search query:")
+<<<<<<< HEAD
+        searchURL = input()
+        searchURL = "https://www.googleapis.com/customsearch/v1/siterestrict"
+=======
         searchTerm = input()
         searchURL = "https://www.googleapis.com/customsearch/v1/siterestrict?cx=" + \
             SearchEngineID + "&key=" + CustomSearchAPIKey + "&q=" + searchTerm
+>>>>>>> 46fd4789a98424a0c3370202fa2eab27ce0bfd67
         if searchURL == "1":
             return []
         try:
-            response = requests.get(searchURL)
+            response = requests.get(
+                searchURL, {"cx": SearchEngineID, "key": CustomSearchAPIKey, "q": searchTerm})
             response = response.text
 
             response = json.loads(response)
@@ -80,10 +82,11 @@ def GoogleSearchAPIResults(searchTerm, numberOfPages):
         results.append(
             {'title': responseItem['title'], 'hyperlink': responseItem['link']})
 
-    # return the results.
     return results
 
 
+<<<<<<< HEAD
+=======
 def IsWikipageAppropriate(title, hyperlink):
 
     if ("Category:" in title or "User:" in title or "Talk:" in title or "User talk:" in title or
@@ -169,6 +172,7 @@ def BuildArticleStructure(url):
     pass
 
 
+>>>>>>> 46fd4789a98424a0c3370202fa2eab27ce0bfd67
 # datatsetFileName = input(
 #     "Enter the name of the dataset csv file without any sufix:")
 # while len(datatsetFileName) <= 1:

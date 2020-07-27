@@ -55,28 +55,26 @@ def GETRequestFromWikipedia(request):
             responseNotReceived = True
             errorCount = 0
 
-        while responseNotReceived:
-            try:
-                response = requests.get(
-                    "http://en.wikipedia.org/w/api.php?", params=req)
-                print("Response received from MediaWiki API.")
-                print(response.url)
+            while responseNotReceived:
+                try:
+                    response = requests.get(
+                        "http://en.wikipedia.org/w/api.php?", params=req)
+                    print("Response received from MediaWiki API.")
+                    print(response.url)
 
-                # response.encoding = 'utf-8'
-                result = response.json()
-                responseNotReceived = False
+                    # response.encoding = 'utf-8'
+                    result = response.json()
+                    responseNotReceived = False
 
-            except:
-
-                errorCount += 1
-                if errorCount < 10:
-                    continue
-                else:
-                    result = {'query': []}
-                    break
+                except:
+                    errorCount += 1
+                    if errorCount < 10:
+                        continue
+                    else:
+                        result = {'query': []}
+                        break
 
         if 'error' in result:
-
             print("The Error Message from Wikipedia is:", result['error'])
             time.sleep(10)
             # result = {'query':[ ]}
@@ -125,6 +123,9 @@ def classFinder(url, articleEncodedTitle, desiredCategory):
         errorCounter += 1
 
     while True:
+        ######################################
+        # We have to implement error counting.
+        ######################################
         try:
             r = requests.get(
                 'https://en.wikipedia.org/w/api.php?action=query&format=json&prop=revisions&titles=' + articleEncodedTitle)
@@ -132,87 +133,90 @@ def classFinder(url, articleEncodedTitle, desiredCategory):
             query = r['query']
             pages = query['pages']
             break
-        except(e):
+        except:
             print(
                 "\n\n\nI cannot retrieve the revision ID of this article! Error Message: " + str(e))
             time.sleep(1)
     try:
-        revisions = pages.values()[0]['revisions']
+        revisions = list(pages.values())[0]['revisions']
         revisionID = revisions[0]['revid']
     except:
         return "No-Class", "No-Class", False
-    qualityDict = None
-    while True:
-        try:
-            r = requests.get(
-                'https://ores.wmflabs.org/scores/enwiki/wp10/' + str(revisionID))
-            print("ores.wmflabs.org responded: " + str(r))
-            r = r.json()
-            qualityDict = r[str(revisionID)]
-            innerIndex = 0
-            while 'prediction' not in qualityDict and innerIndex < 4:
-                qualityDict = qualityDict['score']
-                innerIndex = innerIndex + 1
-                print("Found score in qualityDict for the " +
-                      str(innerIndex) + " time.")
-            qualityClass = qualityDict['prediction']
-            break
-        except(e):
-            print(
-                "\n\n\nI cannot retrieve the class of this article from the API! Error Message: " + str(e))
-            time.sleep(1)
+    # qualityDict = None
+    # while True:
+        ######################################
+        # We have to implement error counting.
+        ######################################
+        #     try:
+        #         r = requests.get(
+        #             'https://ores.wmflabs.org/scores/enwiki/wp10/' + str(revisionID))
+        #         print("ores.wmflabs.org responded: " + str(r))
+        #         r = r.json()
+        #         qualityDict = r[str(revisionID)]
+        #         innerIndex = 0
+        #         while 'prediction' not in qualityDict and innerIndex < 4:
+        #             qualityDict = qualityDict['score']
+        #             innerIndex = innerIndex + 1
+        #             print("Found score in qualityDict for the " +
+        #                   str(innerIndex) + " time.")
+        #         qualityClass = qualityDict['prediction']
+        #         break
+        #     except:
+        #         print(
+        #             "\n\n\nI cannot retrieve the class of this article from the API! Error Message: " + str(e))
+        #         time.sleep(1)
 
-    probabilitiesOfEachClass = qualityDict['probability']
-    FAClassProbability = probabilitiesOfEachClass['FA']
-    GAClassProbability = probabilitiesOfEachClass['GA']
-    BClassProbability = probabilitiesOfEachClass['B']
-    CClassProbability = probabilitiesOfEachClass['C']
-    StartClassProbability = probabilitiesOfEachClass['Start']
-    StubClassProbability = probabilitiesOfEachClass['Stub']
+        # probabilitiesOfEachClass = qualityDict['probability']
+        # FAClassProbability = probabilitiesOfEachClass['FA']
+        # GAClassProbability = probabilitiesOfEachClass['GA']
+        # BClassProbability = probabilitiesOfEachClass['B']
+        # CClassProbability = probabilitiesOfEachClass['C']
+        # StartClassProbability = probabilitiesOfEachClass['Start']
+        # StubClassProbability = probabilitiesOfEachClass['Stub']
 
-    weightedAverage = (float(StubClassProbability) + 2 * float(StartClassProbability) + 3 * float(CClassProbability) +
-                       4 * float(BClassProbability) + 5 * float(GAClassProbability) + 6 * float(FAClassProbability)) / (
-        float(StubClassProbability) + float(StartClassProbability) + float(CClassProbability) +
-        float(BClassProbability) + float(GAClassProbability) + float(FAClassProbability))
+        # weightedAverage = (float(StubClassProbability) + 2 * float(StartClassProbability) + 3 * float(CClassProbability) +
+        #                    4 * float(BClassProbability) + 5 * float(GAClassProbability) + 6 * float(FAClassProbability)) / (
+        #     float(StubClassProbability) + float(StartClassProbability) + float(CClassProbability) +
+        #     float(BClassProbability) + float(GAClassProbability) + float(FAClassProbability))
 
-    if weightedAverage > 5:
-        qualityClass = "FA-Class"
-    elif weightedAverage > 4:
-        qualityClass = "GA-Class"
-    elif weightedAverage > 3:
-        qualityClass = "B-Class"
-    elif weightedAverage > 2:
-        qualityClass = "C-Class"
-    elif weightedAverage > 1:
-        qualityClass = "Start-Class"
-    else:
-        qualityClass = "Stub-Class"
+        # if weightedAverage > 5:
+        #     qualityClass = "FA-Class"
+        # elif weightedAverage > 4:
+        #     qualityClass = "GA-Class"
+        # elif weightedAverage > 3:
+        #     qualityClass = "B-Class"
+        # elif weightedAverage > 2:
+        #     qualityClass = "C-Class"
+        # elif weightedAverage > 1:
+        #     qualityClass = "Start-Class"
+        # else:
+        #     qualityClass = "Stub-Class"
 
-    print("qualityClass: " + qualityClass)
+        # print("qualityClass: " + qualityClass)
 
     if talkSoup != '' and talkSoup.find('div', id="catlinks") != None and talkSoup.find('b', text="Wikipedia does not have a") == None:
         categoryDIVTag = talkSoup.find('div', id="catlinks")
 
-        # if categoryDIVTag.find(text=re.compile('.*FA-Class.*')) != None:
-        #     qualityClass = "FA-Class"
+        if categoryDIVTag.find(text=re.compile('.*FA-Class.*')) != None:
+            qualityClass = "FA-Class"
 
-        # elif categoryDIVTag.find(text=re.compile('.* A-Class.*')) != None:
-        #     qualityClass = "A-Class"
+        elif categoryDIVTag.find(text=re.compile('.* A-Class.*')) != None:
+            qualityClass = "A-Class"
 
-        # elif categoryDIVTag.find(text=re.compile('.*GA-Class.*')) != None:
-        #     qualityClass = "GA-Class"
+        elif categoryDIVTag.find(text=re.compile('.*GA-Class.*')) != None:
+            qualityClass = "GA-Class"
 
-        # elif categoryDIVTag.find(text=re.compile('.*B+ class.*')) != None:
-        #     qualityClass = "B+ class"
+        elif categoryDIVTag.find(text=re.compile('.*B+ class.*')) != None:
+            qualityClass = "B+ class"
 
-        # elif categoryDIVTag.find(text=re.compile('.*B-Class.*')) != None:
-        #     qualityClass = "B-Class"
+        elif categoryDIVTag.find(text=re.compile('.*B-Class.*')) != None:
+            qualityClass = "B-Class"
 
-        # elif categoryDIVTag.find(text=re.compile('.*C-Class.*')) != None:
-        #     qualityClass = "C-Class"
+        elif categoryDIVTag.find(text=re.compile('.*C-Class.*')) != None:
+            qualityClass = "C-Class"
 
-        # elif categoryDIVTag.find(text=re.compile('.*Stub-Class.*')) != None:
-        #     qualityClass = "Stub-Class"
+        elif categoryDIVTag.find(text=re.compile('.*Stub-Class.*')) != None:
+            qualityClass = "Stub-Class"
 
         if categoryDIVTag.find(text=re.compile('.*Top-importance.*')) != None:
             importanceClass = "Top-importance"
@@ -287,13 +291,12 @@ def WikipediaPageStats(articleHyperlink, articleSoup, articleTitle, desiredCateg
     # articleEncodedTitle = articleEncodedTitle.replace('%27', "'")
     # articleEncodedTitle = articleEncodedTitle.replace('%28', '(')
     # articleEncodedTitle = articleEncodedTitle.replace('%29', ')')
-    articleEncodedTitle = articleEncodedTitle.replace('%E2%80%93', u'–')
+    # articleEncodedTitle = articleEncodedTitle.replace('%E2%80%93', u'–')
+
     articleEncodedTitle = unquote(articleEncodedTitle)
 
     responseCounter = 0
-
     numberOfExternalLinks = 0
-
     # for result in GETRequestFromWikipedia( {'titles':articleTitle, 'prop':'info|contributors|revisions', 'inprop':'protection|watchers', 'pclimit':'max', 'rvprop':'timestamp', 'rvlimit':'max'} ):
     for result in GETRequestFromWikipedia({'titles': articleEncodedTitle, 'prop': 'info|extlinks', 'inprop': 'protection|watchers', 'ellimit': 'max'}):
 
@@ -319,9 +322,7 @@ def WikipediaPageStats(articleHyperlink, articleSoup, articleTitle, desiredCateg
                 editProtectionLevel = 'None'
 
                 for protection in pageData['protection']:
-
                     if protection['type'] == 'edit':
-
                         editProtectionLevel = protection['level']
                         break
 
@@ -639,3 +640,78 @@ def findWikiprojectNumOfViews(WikiprojectEncodedTitle="WikiProject_Economics"):
 
         print("Average # Views over the past 90 days:",
               (TotalPagesViews / TotalPagesNum))
+
+
+def IsWikipageAppropriate(title, hyperlink):
+
+    if ("Category:" in title or "User:" in title or "Talk:" in title or "User talk:" in title or
+            "Book:" in title or "Template:" in title):
+        return False, None
+
+    wikipediaSoup = soupStructure(hyperlink)
+    print("Wikipedia page Soup is Retrieved.")
+
+    trialNum = 0
+    while wikipediaSoup == "" and trialNum < 10:
+        trialNum += 1
+        print("Wikipedia page:" + hyperlink +
+              " Soup is not retreived. Please enter an appropriate URL:")
+        # hyperlink = input()
+        # if hyperlink == "1":
+        #     return False, None
+        wikipediaSoup = soupStructure(hyperlink)
+
+    if wikipediaSoup != "":
+        resultRow = WikipediaPageStats(
+            hyperlink, wikipediaSoup, title, 'list')
+
+        trialNum = 0
+        while resultRow == [] and trialNum < 10:
+            trialNum += 1
+            print("wikipageURL:", hyperlink,
+                  "is not found. Please enter a new one:")
+            # hyperlink = input()
+            # if hyperlink == "1":
+            #     return False, None
+            wikipediaSoup = soupStructure(hyperlink)
+
+            innerTrialNum = 0
+            while wikipediaSoup == "" and innerTrialNum < 10:
+                innerTrialNum += 1
+                print("Wikipedia page:" + hyperlink +
+                      " Soup is not retreived. Please enter an appropriate URL:")
+                # hyperlink = input()
+                # if hyperlink == "1":
+                #     return False, None
+                wikipediaSoup = soupStructure(hyperlink)
+
+            resultRow = WikipediaPageStats(
+                hyperlink, wikipediaSoup, title, 'list')
+
+        if resultRow == []:
+            return False, None
+        print("Wikipedia page Stats:", resultRow)
+
+        # If the edit protection os the page is not None:
+        # if resultRow[2].lower() != "none":
+        #     print("The Wikipedia page is edit protected. Do not recommend it.")
+        #     return False, None
+        if resultRow['qualityClass'].lower() == "stub-class" or resultRow['qualityClass'].lower() == "start":
+            print("The Wikipedia page is a " +
+                  resultRow['qualityClass'] + ". Do not recommend it.")
+            return False, None
+        if resultRow['importanceClass'].lower() != 'high-importance' and resultRow['importanceClass'].lower() != 'top-importance':
+            print("The Wikipedia page is a " +
+                  resultRow['importanceClass'] + ". Do not recommend it.")
+            return False, None
+        if num(resultRow['length']) < 1000:
+            print(
+                "The Wikipedia page has been viewed less than 1000 times. Do not recommend it.")
+            return False, None
+
+        print("The Wikipedia page is OK to recommend.")
+        return True, resultRow
+
+
+print(IsWikipageAppropriate("Epidemiology of attention deficit hyperactive disorder",
+                            "https://en.wikipedia.org/wiki/Epidemiology_of_attention_deficit_hyperactive_disorder"))
