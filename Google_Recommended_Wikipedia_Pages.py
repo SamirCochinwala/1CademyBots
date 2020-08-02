@@ -167,68 +167,10 @@ def IsWikipageAppropriate(title, hyperlink):
         print("The Wikipedia page is OK to recommend.")
         return True, resultRow
 
-#Returns a list of html reference tag ids
-#
-#accepts: bs4 Tag as SummaryContainer
-#
-def GetReferencesFromSummaryContainer(SummaryContainer):
-    found = []
-    for child in SummaryContainer.children:
-        if isinstance(child, element.Tag):
+#Builds a dictionary of systems for 
+def BuildArticleStructure(url):
+    pass
 
-            #Each article summary ends with this table so we don't want
-            #any <p> tags after this
-            if child.has_attr('id') and child['id'] == "toc":
-                return found
-
-            #Each article container has a blank <p> tag that we want to ignore
-            if child.has_attr('class') and "mw-empty-elt" in child['class']:
-                continue
-
-            #Our summary paragraph(s)
-            if child.name == 'p':
-                references = child.find_all('sup')
-                for ref in references: 
-                    found.extend([tag['href'][1:] for tag in ref.find_all('a')])
-
-
-    #We should have returned our list already, so if we get this far
-    #something is probably wrong with the structure of our soup article
-    return []
-
-
-#Returns a list of references listed in the summary of a
-#wikipedia article
-#
-#accepts a url as string
-#
-def GetReferenceDataFromArticle(url):
-    print("Getting summary from article: ", url)#TODO remove
-    soup = soupStructure(url)
-
-    #The wiki html structure does not explicitly define the summary paragraphs so we
-    #have to find the <p> tags which are direct descendents of the <div> below id#mw-content-text
-    summary_container = soup.find(id="mw-content-text")
-    refs = GetReferencesFromSummaryContainer(list(summary_container.children)[0])
-    
-    ExtractedReferences = []
-    
-    for ref_id in refs:
-        if ref_id == "wiki/Wikipedia:Citation_needed":
-            print("Missing citation ")
-
-        FullReference = {}
-        ref = soup.find(id=ref_id)
-        if not ref:
-            print("Error finding reference with HTML ID: ", ref_id)
-            continue
-        LinkTags = ref.find_all('a')
-
-        for tag in LinkTags:
-            if tag.has_attr('class'):
-                ExtractedReferences.append({'name': tag.string, 'link': tag['href']})
-        
-    return ExtractedReferences
 
 >>>>>>> 46fd4789a98424a0c3370202fa2eab27ce0bfd67
 # datatsetFileName = input(
@@ -285,7 +227,7 @@ with open(datatsetFileName + '.csv', 'w') as fw:
             if not flag:
                 continue
 
-            ReferenceData = GetReferenceDataFromArticle(recommendedURL)
+            
 
             #TODO Pass reference data to MicrosoftResearchAPI
 
