@@ -105,6 +105,16 @@ def GetReferenceDataFromArticle(url):
                 print("Error getting citation information from: ", url)#TODO Implement Logging
             
     return found
+#This will store and scan all the links available from the given wikipedia page
+def GetLinks():
+    page = requests.get('https://en.wikipedia.org/wiki/Category:Epidemiology')
+    links = [];
+    data = page.text
+    soup  = Soup(data, 'html.parser')
+    for link in soup.find_all('a',href =True):
+        if link.has_attr('href'):
+            links.append(str(link.get('href'))+ "\n")
+#TODO Fix bug where missing some https:// and ensure all links are found
 
 #This is just to test this module on a variety of wiki articles to ensure that 
 #it works in 99% of cases
