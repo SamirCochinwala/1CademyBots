@@ -2,6 +2,8 @@ import WikipediaScrapingLibrary
 from bs4 import element
 import unittest
 import re
+import requests
+from bs4 import BeautifulSoup as Soup
 
 #TODO implement caching one article for successive calls to 
 #getReferenceData and getPrerequisiteData
